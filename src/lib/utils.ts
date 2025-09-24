@@ -10,6 +10,20 @@ export function sanitizeUrl(url: string) {
 	return query ? `${sanitizedBase}?${query}` : sanitizedBase;
 }
 
+export function buildFullUrl(
+	url: string,
+	params: Record<string, any> = {},
+	baseUrl = null
+): string {
+	let fullUrl = url;
+
+	if (!/^https?:\/\//i.test(url) && baseUrl) {
+		fullUrl = `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+	}
+
+	return buildUrlWithQueryParams(fullUrl, params);
+}
+
 export function buildUrlWithQueryParams(url: string, params: Record<string, any>): string {
 	const query = new URLSearchParams();
 
@@ -132,8 +146,25 @@ export async function respond(response: Response) {
 		}
 		return true;
 	} else {
-		// console.log('RESPONSE', await response.text());
-		throw await response.json();
+		const contentType = response.headers.get('content-type');
+		if (contentType && contentType.includes('application/json')) {
+			try {
+				const errorData = await response.json();
+				throw errorData;
+			} catch (e) {
+				console.error('Failed to parse error response as JSON', e);
+				throw { error: 'Request failed', status: response.status, statusText: response.statusText };
+			}
+		} else {
+			const text = await response.text();
+			console.error('Non-JSON error response:', text);
+			throw {
+				error: 'Request failed',
+				status: response.status,
+				statusText: response.statusText,
+				body: text
+			};
+		}
 	}
 }
 
@@ -165,8 +196,6 @@ export function parseSetCookieFromResponse(res: Response) {
 	// @ts-ignore
 	const rawArray = (res.headers as any)?.raw?.()['set-cookie'];
 
-	console.log('RAW RAW RAW', rawArray);
-
 	let arr: string[] = [];
 
 	if (Array.isArray(rawArray) && rawArray.length) {
@@ -182,12 +211,8 @@ export function parseSetCookieFromResponse(res: Response) {
 		arr = parse.splitCookiesString(single);
 	}
 
-	console.log('RAW COOKIES ARRAY', arr);
-
 	// parse accepts an array and returns objects with name/value/attrs
 	const parsed = parse.parse(arr);
-
-	console.log('PARSED COOKIES OBJECTS', parsed);
 
 	// return only name=value pairs (suitable for Cookie request header)
 	return parsed.map((c: { name: string; value: string }) => `${c.name}=${c.value}`);

@@ -17,10 +17,18 @@ export function generateFileViewUrl(
 export async function retrieve(url: string, event?: RequestEvent) {
 	const accessToken = event?.locals?.session?.data?.accessToken ?? '';
 
-	const res = await fetch(sanitizeUrl(url), {
-		headers: headers(accessToken, event),
-		credentials: 'include'
-	});
+	// const fetchFn = event?.fetch || fetch;
+	// const res = await fetchFn(sanitizeUrl(url), {
+	let res: Response;
+	try {
+		res = await fetch(sanitizeUrl(url), {
+			headers: headers(accessToken, event),
+			credentials: 'include'
+		});
+	} catch (error) {
+		console.error('Error fetching', error);
+		throw error;
+	}
 
 	await gatherCookies(res, event);
 
@@ -30,12 +38,22 @@ export async function retrieve(url: string, event?: RequestEvent) {
 export async function submit(url: string, data: any, update = false, event?: RequestEvent) {
 	const accessToken = event?.locals?.session?.data?.accessToken ?? '';
 
-	const res = await fetch(sanitizeUrl(url), {
-		method: update ? 'PUT' : 'POST',
-		headers: headers(accessToken, event),
-		body: JSON.stringify(data),
-		credentials: 'include'
-	});
+	// const fetchFn = event?.fetch || fetch;
+	// const res = await fetchFn(sanitizeUrl(url), {
+	let res: Response;
+	try {
+		res = await fetch(sanitizeUrl(url), {
+			method: update ? 'PUT' : 'POST',
+			headers: headers(accessToken, event),
+			body: JSON.stringify(data),
+			credentials: 'include'
+		});
+	} catch (error) {
+		console.error('Error fetching', error);
+		throw error;
+	}
+
+	await gatherCookies(res, event);
 
 	return await respond(res);
 }
@@ -43,24 +61,27 @@ export async function submit(url: string, data: any, update = false, event?: Req
 export async function destroy(url: string, event?: RequestEvent) {
 	const accessToken = event?.locals?.session?.data?.accessToken ?? '';
 
-	const res = await fetch(sanitizeUrl(url), {
-		method: 'DELETE',
-		headers: headers(accessToken, event),
-		credentials: 'include'
-	});
+	// const fetchFn = event?.fetch || fetch;
+	// const res = await fetchFn(sanitizeUrl(url), {
+	let res: Response;
+	try {
+		res = await fetch(sanitizeUrl(url), {
+			method: 'DELETE',
+			headers: headers(accessToken, event),
+			credentials: 'include'
+		});
+	} catch (error) {
+		console.error('Error fetching', error);
+		throw error;
+	}
+
+	await gatherCookies(res, event);
 
 	return await respond(res);
 }
 
 function headers(accessToken?: string, event?: RequestEvent) {
-	// const storedCookies = event?.locals?.session?.data?.laravelCookies ?? [];
-
-	// const cookieHeader = storedCookies.length ? storedCookies.join('; ') : '';
-	// const cookieHeader = storedCookies.length ? normalizeCookies(storedCookies).join('; ') : '';
-
 	const cookieHeader = buildCookieHeaderFromSession(event);
-
-	// console.log('REQUEST COOKIES', cookieHeader);
 
 	const headers = {
 		'x-api-key': APIKEY,
@@ -72,7 +93,14 @@ function headers(accessToken?: string, event?: RequestEvent) {
 
 async function gatherCookies(response: Response, event?: RequestEvent) {
 	const newCookies = parseSetCookieFromResponse(response);
-	console.log('RETRIEVED COOKIES', newCookies);
+
+	if (!newCookies.some((c) => c.startsWith('guest_uuid='))) {
+		const headerUUID = response.headers.get('x-guest-uuid');
+		if (headerUUID) {
+			newCookies.push(`guest_uuid=${headerUUID}`);
+		}
+	}
+
 	if (event) {
 		await event.locals.session.update((prev = {}) => {
 			const oldCookies = prev.laravelCookies ?? [];
