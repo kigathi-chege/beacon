@@ -5,8 +5,10 @@ export const handle = handleSession(
 	{
 		secret: SESSION_SECRET,
 		rolling: true, // refresh expiry automatically
-		expires: 7,
-		expires_in: 'days'
+		expires: 365,
+		expires_in: 'days',
+		sameSite: 'none',
+		secure: true
 	},
 	({ event, resolve }) => {
 		// event.locals is populated with the session `event.locals.session`
