@@ -83,6 +83,8 @@ export async function destroy(url: string, event?: RequestEvent) {
 function headers(accessToken?: string, event?: RequestEvent) {
 	const cookieHeader = buildCookieHeaderFromSession(event);
 
+	console.log('cookieHeader', cookieHeader);
+
 	const headers = {
 		'x-api-key': APIKEY,
 		'Content-Type': 'application/json',
