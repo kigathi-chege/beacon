@@ -66,12 +66,12 @@ export function wrapNoArgFunc(func: any, args: any[]) {
 	return () => func(...args);
 }
 
-export function getTextFromSection(section: Section, name: string) {
-	return () => section.texts?.find((text: iText) => text.name === name);
+export function getTextFromSection(section: Section | null, name: string) {
+	return section?.texts?.find((text: iText) => text.name === name);
 }
 
-export function getButtonFromSection(section: Section, name: string) {
-	return () => section.buttons?.find((button: iButton) => button.name === name);
+export function getButtonFromSection(section: Section | null, name: string) {
+	return section?.buttons?.find((button: iButton) => button.name === name);
 }
 
 export function formatDate(date: string) {
