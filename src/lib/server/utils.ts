@@ -96,6 +96,8 @@ function headers(accessToken?: string, event?: RequestEvent) {
 async function gatherCookies(response: Response, event?: RequestEvent) {
 	const newCookies = parseSetCookieFromResponse(response);
 
+	console.log('New Cookies from response:', newCookies);
+
 	if (!newCookies.some((c) => c.startsWith('guest_uuid='))) {
 		const headerUUID = response.headers.get('x-guest-uuid');
 		if (headerUUID) {
