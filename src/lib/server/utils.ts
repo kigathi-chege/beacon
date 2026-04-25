@@ -35,17 +35,22 @@ export async function retrieve(url: string, event?: RequestEvent) {
 	return await respond(res);
 }
 
-export async function submit(url: string, data: any, update = false, event?: RequestEvent) {
+export async function submit(
+	url: string,
+	data: any,
+	update = false,
+	event?: RequestEvent,
+	isFormData = false
+) {
 	const accessToken = event?.locals?.session?.data?.accessToken ?? '';
+	const isFormDataRequest = isFormData && data instanceof FormData;
 
-	// const fetchFn = event?.fetch || fetch;
-	// const res = await fetchFn(sanitizeUrl(url), {
 	let res: Response;
 	try {
 		res = await fetch(sanitizeUrl(url), {
 			method: update ? 'PUT' : 'POST',
-			headers: headers(accessToken, event),
-			body: JSON.stringify(data),
+			headers: headers(accessToken, event, isFormDataRequest),
+			body: isFormDataRequest ? data : JSON.stringify(data),
 			credentials: 'include'
 		});
 	} catch (error) {
@@ -80,17 +85,19 @@ export async function destroy(url: string, event?: RequestEvent) {
 	return await respond(res);
 }
 
-function headers(accessToken?: string, event?: RequestEvent) {
+function headers(accessToken?: string, event?: RequestEvent, isFormData = false) {
 	const cookieHeader = buildCookieHeaderFromSession(event);
 
-	console.log('cookieHeader', cookieHeader);
-
-	const headers = {
+	const baseHeaders: Record<string, string> = {
 		'x-api-key': APIKEY,
-		'Content-Type': 'application/json',
 		cookie: cookieHeader
 	};
-	return accessToken ? { ...headers, Authorization: `Bearer ${accessToken}` } : headers;
+
+	if (!isFormData) {
+		baseHeaders['Content-Type'] = 'application/json';
+	}
+
+	return accessToken ? { ...baseHeaders, Authorization: `Bearer ${accessToken}` } : baseHeaders;
 }
 
 async function gatherCookies(response: Response, event?: RequestEvent) {

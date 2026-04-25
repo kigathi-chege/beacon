@@ -67,11 +67,11 @@ export function wrapNoArgFunc(func: any, args: any[]) {
 }
 
 export function getTextFromSection(section: Section | null, name: string) {
-	return section?.texts?.find((text: iText) => text.name === name);
+	return () => section?.texts?.find((text: iText) => text.name === name);
 }
 
 export function getButtonFromSection(section: Section | null, name: string) {
-	return section?.buttons?.find((button: iButton) => button.name === name);
+	return () => section?.buttons?.find((button: iButton) => button.name === name);
 }
 
 export function formatDate(date: string) {
@@ -133,12 +133,15 @@ export async function localFetch(url: string, options?: Partial<iLocalFetch>) {
 
 export async function respond(response: Response) {
 	if (response.ok) {
+		if (response.status === 204 || response.status === 205) {
+			return true;
+		}
 		const contentType = response.headers.get('content-type');
 		if (contentType && contentType.includes('application/json')) {
 			const text = await response.text();
+			if (!text.trim()) return null;
 			try {
-				const data = text ? JSON.parse(text) : null;
-				return data;
+				return JSON.parse(text);
 			} catch (e) {
 				console.error('Invalid JSON response', text);
 				throw e;
@@ -148,24 +151,23 @@ export async function respond(response: Response) {
 	} else {
 		const contentType = response.headers.get('content-type');
 		if (contentType && contentType.includes('application/json')) {
-			try {
-				const errorData = await response.json();
-				throw errorData;
-			} catch (e) {
-				console.error('Failed to parse error response as JSON', e);
-				throw { error: 'Request failed', status: response.status, statusText: response.statusText };
-			}
-		} else {
-			const text = await response.text();
-			console.error('Non-JSON error response:', text);
-			throw {
-				error: 'Request failed',
-				status: response.status,
-				statusText: response.statusText,
-				body: text
-			};
+			throw await response.json();
 		}
+		const text = await response.text();
+		throw { error: 'Request failed', status: response.status, statusText: response.statusText, body: text };
 	}
+}
+
+export async function localFetchFormData(url: string, formData: FormData, method = 'POST') {
+	formData.append('_url', url);
+	formData.append('_method', method);
+
+	const res = await fetch('/x-api/base', {
+		method: 'POST',
+		body: formData
+	});
+
+	return respond(res);
 }
 
 // export function handleLogout() {
