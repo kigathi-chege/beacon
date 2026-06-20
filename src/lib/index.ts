@@ -6,3 +6,4 @@
 export * from './utils.js';
 export * from './store.js';
 export * from './rbac/index.js';
+export { default as SelectFromGallery } from './components/select-from-gallery.svelte';
