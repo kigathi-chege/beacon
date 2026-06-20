@@ -1,6 +1,14 @@
 {
 	"name": "lyre-beacon",
 	"version": "0.1.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kigathi-chege/beacon.git"
+	},
+	"homepage": "https://github.com/kigathi-chege/beacon#readme",
+	"bugs": {
+		"url": "https://github.com/kigathi-chege/beacon/issues"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
