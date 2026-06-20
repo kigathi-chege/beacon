@@ -54,7 +54,12 @@ export async function xAPIHandler(event) {
 
 	let response = await methodHandlers[method as Method]?.();
 
-	let result = 'result' in response ? response.result : response;
+	// `response` can be a primitive (true for 204/non-JSON, null for empty body)
+	// from respond(); the `in` operator throws on primitives, so guard to objects.
+	let result =
+		response && typeof response === 'object' && 'result' in response
+			? response.result
+			: response;
 
 	if (url == 'logout') {
 		await event.locals.session.set({
