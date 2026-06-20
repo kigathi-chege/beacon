@@ -25,6 +25,15 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     environment: Home
+    # Build-only placeholders so the showcase app's `vite build` and svelte-check
+    # can resolve `$env/static/private`. These are NEVER shipped: svelte-package
+    # keeps the literal `$env/static/private` import in dist (it does not inline
+    # values), so the published package reads these from the *consuming* app's
+    # environment at its build time. Real values live in each consumer's env.
+    env:
+      BASEURL: http://localhost/api
+      APIKEY: ci-build-placeholder
+      SESSION_SECRET: ci-build-placeholder-session-secret-0000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
